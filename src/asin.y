@@ -287,13 +287,16 @@ expreRel
        ;
 expreAd
        : expreMul{
-              $$.t = $1.t;
+              $$ = $1;
        }
        | expreAd opAd expreMul{
               $$.t = T_ENTERO;
               if(($3.t != T_ENTERO || $1.t != T_ENTERO) && ($1.t != T_ERROR && $3.t != T_ERROR)){
                      yyerror("error en expresion aditiva");
               }
+
+              $$.d = creaVarTemp();
+              emite($2, crArgPos(niv, $1.d), crArgPos(niv, $3.d), crArgPos(niv, $$.d));
        }
        ;
 expreMul
