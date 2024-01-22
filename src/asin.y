@@ -29,7 +29,7 @@
 %type<t> tipoSimple INT_ BOOL_ 
 %type<r> paramForm listaParamForm paramAct listaParamAct
 %type<s> listaCampos
-%type<e> expre expreLogic expreIgual expreRel expreAd expreMul expreUna expreSufi const TRUE_ FALSE_
+%type<e> expre expreLogic expreIgual expreRel expreAd expreMul expreUna expreSufi const
 %type<u> opUna;
 
 %%
@@ -253,7 +253,7 @@ expre
        ;
 expreLogic
        : expreIgual{
-              $$.t = $1.t;
+              $$ = $1;
        }
        | expreLogic opLogic expreIgual{
               if(($3.t != T_LOGICO || $1.t != T_LOGICO) && ($1.t != T_ERROR && $3.t != T_ERROR)){
@@ -264,7 +264,7 @@ expreLogic
        ;
 expreIgual
        : expreRel{
-              $$.t = $1.t;
+              $$ = $1;
        }
        | expreIgual opIgual expreRel{
               if($3.t != $1.t && ($1.t != T_ERROR && $3.t != T_ERROR)){
@@ -275,7 +275,7 @@ expreIgual
        ;
 expreRel
        : expreAd{
-              $$.t = $1.t;
+              $$ = $1;
        }
        | expreRel opRel expreAd{
               if(($1.t != T_ENTERO || $3.t != T_ENTERO) && ($1.t != T_ERROR && $3.t != T_ERROR)){
@@ -301,7 +301,7 @@ expreAd
        ;
 expreMul
        : expreUna{
-              $$.t = $1.t;
+              $$ = $1;
        }
        | expreMul opMul expreUna{
               $$.t = T_ENTERO;
@@ -312,7 +312,7 @@ expreMul
        ;
 expreUna
        : expreSufi{
-              $$.t = $1.t;
+              $$ = $1;
        }
        | opUna expreUna{
               if($2.t != T_ENTERO && $1 == 0){
@@ -334,14 +334,15 @@ expreUna
        ;
 expreSufi
        : const{
-              $$.t = $1.t;
+              $$ = $1;
        }
        | APAR_ expre CPAR_{
-              $$.t = $2.t;
+              $$ = $2;
        }
        | ID_{
               SIMB sim = obtTdS($1);
               $$.t = sim.t;
+              $$.d = sim.d;
        }
        | ID_ opIncre{
               SIMB sim = obtTdS($1);
@@ -387,6 +388,7 @@ expreSufi
 const
        : CTE_{
               $$.t = T_ENTERO;
+              $$.v = yylval.cent;
        }
        | TRUE_{
               $$.t = T_LOGICO;

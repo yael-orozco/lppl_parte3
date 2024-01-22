@@ -38,6 +38,7 @@ struct STRUCT_MENOSC{
 struct EXPRE{
     int t;
     int d;
+    int v;
 };
 
 #endif  /* _HEADER_H */
