@@ -34,7 +34,7 @@
 %type<s> listaCampos
 %type<e> expre expreLogic expreIgual expreRel expreAd expreMul expreUna expreSufi const
 %type<u> opUna opAd
-%type<p> programa listaDeclaraciones declaracionFunc declaracion
+%type<p> programa listaDeclaraciones declaracionFunc declaracion declaracionVar
 
 %%
 
@@ -146,7 +146,7 @@ declaracionFunc
               emite(TOPFP, crArgNul(), crArgNul(), crArgNul());
               emite(FPPOP, crArgNul(), crArgNul(), crArgNul());
               if(strcmp($2, "main") == 0){
-                $$.main = si;
+                $$.main = si + 2;
                 emite(FIN, crArgNul(), crArgNul(), crArgNul());
               }
               else{
@@ -365,7 +365,9 @@ expreUna
        ;
 expreSufi
        : const{
-              $$ = $1;
+              $$.t = $1.t;
+              $$.d = creaVarTemp();
+              emite(EASIG, crArgEnt($1.v), crArgNul(), crArgPos(niv, $$.d));
        }
        | APAR_ expre CPAR_{
               $$ = $2;
