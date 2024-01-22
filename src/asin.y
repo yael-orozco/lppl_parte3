@@ -251,7 +251,7 @@ expre
               }
               else {
                 $$ = $3;
-                emite(EASIG, crArgEnt(sim.d), crArgNul(), crArgPos(niv, $3.d))
+                emite(EASIG, crArgEnt(sim.d), crArgNul(), crArgPos(niv, $3.d));
               }
        }
        | ID_ ACOR_ expre CCOR_ IGUAL_ expre{
