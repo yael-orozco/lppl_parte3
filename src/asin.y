@@ -32,7 +32,7 @@
 %type<t> tipoSimple 
 %type<r> paramForm listaParamForm paramAct listaParamAct
 %type<s> listaCampos
-%type<e> expre expreLogic expreIgual expreRel expreAd expreMul expreUna expreSufi const declaracionFunc
+%type<e> expre expreLogic expreIgual expreRel expreAd expreMul expreUna expreSufi const
 %type<u> opUna opAd
 %type<p> programa listaDeclaraciones declaracionFunc declaracion
 
