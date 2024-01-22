@@ -25,6 +25,8 @@
        struct STRUCT_MENOSC s;
        struct EXPRE e;
        int u;
+
+       struct PROGRAMA p;
 }
 
 %type<t> tipoSimple 
@@ -32,6 +34,7 @@
 %type<s> listaCampos
 %type<e> expre expreLogic expreIgual expreRel expreAd expreMul expreUna expreSufi const
 %type<u> opUna opAd
+%type<p> programa
 
 %%
 
