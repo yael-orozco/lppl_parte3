@@ -214,6 +214,8 @@ instEntSal
               if($3.t != T_ENTERO){
                      yyerror("argumento de print debe ser entero");
               }
+
+              emite(EWRITE, crArgNul(), crArgNul(), crArgPos(niv, $3.d));
        }
        ;
 instSelec
