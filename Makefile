@@ -26,6 +26,6 @@ alex.c:	$(SRCDIR)/alex.l
 	flex -oalex.c $(SRCDIR)/alex.l 
 
 clean:
-	rm -f ./alex.c ./asin.c ./include/asin.h
+	rm -f ./alex.c ./asin.c ./include/asin.h ./.c3d ./cmc
 	rm -f ./*.o  ./include/*.?~  ./src/*.?~
 ###############################################################################
