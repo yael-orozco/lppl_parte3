@@ -32,7 +32,7 @@
 %type<t> tipoSimple 
 %type<r> paramForm listaParamForm paramAct listaParamAct
 %type<s> listaCampos
-%type<e> expre expreLogic expreIgual expreRel expreAd expreMul expreUna expreSufi const
+%type<e> expre expreLogic expreIgual expreRel expreAd expreMul expreUna expreSufi const declaracionFunc
 %type<u> opUna opAd
 %type<p> programa
 
@@ -127,9 +127,13 @@ declaracionFunc
        APAR_ paramForm CPAR_ 
        {
               int refe = $5.refe;
-              if(!insTdS($2, FUNCION, $1, niv-1, -1, refe)){
+              if(!insTdS($2, FUNCION, $1, niv-1, si, refe)){
                      yyerror("identificador de funcion repetido");
               }
+              emite(PUSHFP, crArgNul(), crArgNul(), crArgNul());
+              emite(FPTOP, crArgNul(), crArgNul(), crArgNul());
+              $<e>$.d = creaLans(si);
+              emite(INCTOP, crArgNul(), crArgNul(), crArgNul());    
        }
        ALLAVE_ declaracionVarLocal listaInst RETURN_ expre{
               if($12.t != $1){
@@ -137,6 +141,17 @@ declaracionFunc
               }
        }
        PTOCOMA_ CLLAVE_ {
+              int dvr = TALLA_SEGENLACES + $5.talla + TALLA_TIPO_SIMPLE;
+              emite(EASIG, crArgPos(niv, $12.d), crArgNul(), crArgPos(niv, -dvr));
+              emite(TOPFP, crArgNul(), crArgNul(), crArgNul());
+              emite(FPPOP, crArgNul(), crArgNul(), crArgNul());
+              if(strcmp($2, "main") == 0){
+                emite(FIN, crArgNul(), crArgNul(), crArgNul());
+              }
+              else{
+                emite(RET, crArgNul(), crArgNul(), crArgNul());
+              }
+
               if(verTdS){
                      mostrarTdS();
               }
