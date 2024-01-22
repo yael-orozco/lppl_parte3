@@ -43,6 +43,7 @@ programa
        {
               dvar = 0;
               niv = 0;
+              si = 0;
               cargaContexto(niv);
               $<p>$.varglo = creaLans(si);
               emite(INCTOP, crArgNul(), crArgNul(), crArgNul());
@@ -146,7 +147,7 @@ declaracionFunc
               emite(TOPFP, crArgNul(), crArgNul(), crArgNul());
               emite(FPPOP, crArgNul(), crArgNul(), crArgNul());
               if(strcmp($2, "main") == 0){
-                $$.main = si + 2;
+                $$.main = si;
                 emite(FIN, crArgNul(), crArgNul(), crArgNul());
               }
               else{
@@ -250,6 +251,7 @@ expre
               }
               else {
                 $$ = $3;
+                emite(EASIG, crArgEnt(sim.d), crArgNul(), crArgPos(niv, $3.d))
               }
        }
        | ID_ ACOR_ expre CCOR_ IGUAL_ expre{
@@ -371,6 +373,7 @@ expreSufi
        }
        | APAR_ expre CPAR_{
               $$ = $2;
+              
        }
        | ID_{
               SIMB sim = obtTdS($1);
