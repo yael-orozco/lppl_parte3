@@ -220,7 +220,10 @@ expre
               else if($3.t != sim.t && $3.t != T_ERROR){
                      yyerror("error de tipos en asignacion");
               }
-              else $$.t = $3.t;
+              else {
+                $$ = $3;
+                printf("\n\n\t%d\n\n", $3.v);
+              }
        }
        | ID_ ACOR_ expre CCOR_ IGUAL_ expre{
               SIMB sim = obtTdS($1);
