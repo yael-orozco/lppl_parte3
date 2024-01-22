@@ -3,6 +3,7 @@
 #include <string.h>
 #include "header.h"
 #include "libtds.h"
+#include "libgci.h"
 %}
 
 %token  APAR_  CPAR_  MAS_  MENOS_  POR_  DIV_  MOD_  IGUAL_ ALLAVE_  CLLAVE_  ACOR_  CCOR_  COMA_  PTO_ PTOCOMA_
