@@ -44,12 +44,12 @@ programa
               dvar = 0;
               niv = 0;
               cargaContexto(niv);
-              $$.varglo = creaLans(si);
+              $<p>$.varglo = creaLans(si);
               emite(INCTOP, crArgNul(), crArgNul(), crArgNul());
               
        }
        listaDeclaraciones{
-              completaLans($$.varglo, crArgEnt(dvar));
+              completaLans($<p>1.varglo, crArgEnt(dvar));
               descargaContexto(niv);
        }
        ;
