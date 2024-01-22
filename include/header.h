@@ -43,6 +43,7 @@ struct EXPRE{
 
 struct PROGRAMA{
     int varglo;
+    int main;
 };
 #endif  /* _HEADER_H */
 /*****************************************************************************/

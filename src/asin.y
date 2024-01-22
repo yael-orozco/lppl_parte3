@@ -46,10 +46,13 @@ programa
               cargaContexto(niv);
               $<p>$.varglo = creaLans(si);
               emite(INCTOP, crArgNul(), crArgNul(), crArgNul());
+              $<p>$.main = creaLans(si);
+              emite(GOTOS, crArgNul(), crArgNul(), crArgNul());
               
        }
        listaDeclaraciones{
               completaLans($<p>1.varglo, crArgEnt(dvar));
+              completaLans($<p>1.main, crArgEnt(0));
               descargaContexto(niv);
        }
        ;
