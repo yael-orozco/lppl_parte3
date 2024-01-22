@@ -14,7 +14,7 @@
 %token  TRUE_  FALSE_
 
 %token<ident> ID_
-%token<cent> CTE_    
+%token<cent> CTE_   
 
 %union {
        char *ident;
@@ -26,11 +26,11 @@
        int u;
 }
 
-%type<t> tipoSimple INT_ BOOL_ 
+%type<t> tipoSimple 
 %type<r> paramForm listaParamForm paramAct listaParamAct
 %type<s> listaCampos
 %type<e> expre expreLogic expreIgual expreRel expreAd expreMul expreUna expreSufi const
-%type<u> opUna;
+%type<u> opUna opAd
 
 %%
 
