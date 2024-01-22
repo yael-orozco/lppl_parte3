@@ -34,7 +34,7 @@
 %type<s> listaCampos
 %type<e> expre expreLogic expreIgual expreRel expreAd expreMul expreUna expreSufi const declaracionFunc
 %type<u> opUna opAd
-%type<p> programa
+%type<p> programa listaDeclaraciones declaracionFunc declaracion
 
 %%
 
@@ -52,7 +52,7 @@ programa
        }
        listaDeclaraciones{
               completaLans($<p>1.varglo, crArgEnt(dvar));
-              completaLans($<p>1.main, crArgEnt(0));
+              completaLans($<p>1.main, crArgEnt($2.main));
               descargaContexto(niv);
        }
        ;
@@ -146,6 +146,7 @@ declaracionFunc
               emite(TOPFP, crArgNul(), crArgNul(), crArgNul());
               emite(FPPOP, crArgNul(), crArgNul(), crArgNul());
               if(strcmp($2, "main") == 0){
+                $$.main = si;
                 emite(FIN, crArgNul(), crArgNul(), crArgNul());
               }
               else{
