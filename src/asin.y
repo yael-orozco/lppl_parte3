@@ -58,12 +58,16 @@ programa
        }
        ;
 listaDeclaraciones
-       : declaracion
+       : declaracion{
+              $$ = $1;
+       }
        | listaDeclaraciones declaracion
        ;
 declaracion
        : declaracionVar
-       | declaracionFunc
+       | declaracionFunc{
+              $$ = $1;
+       }
        ;
 declaracionVar
        : tipoSimple ID_ PTOCOMA_ {
