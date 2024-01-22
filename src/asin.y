@@ -41,8 +41,12 @@ programa
               dvar = 0;
               niv = 0;
               cargaContexto(niv);
+              $$.varglo = creaLans(si);
+              emite(INCTOP, crArgNul(), crArgNul(), crArgNul());
+              
        }
        listaDeclaraciones{
+              completaLans($$.varglo, crArgEnt(dvar));
               descargaContexto(niv);
        }
        ;
@@ -222,7 +226,6 @@ expre
               }
               else {
                 $$ = $3;
-                printf("\n\n\t%d\n\n", $3.v);
               }
        }
        | ID_ ACOR_ expre CCOR_ IGUAL_ expre{

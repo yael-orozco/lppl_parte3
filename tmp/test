@@ -1,6 +1,4 @@
+int hola;
 int main(){
-    int hola;
-    hola = 10;
-
     return 0;
 }
