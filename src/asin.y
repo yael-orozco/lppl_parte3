@@ -27,14 +27,16 @@
        int u;
 
        struct PROGRAMA p;
+       struct IFW i;
 }
 
 %type<t> tipoSimple 
 %type<r> paramForm listaParamForm paramAct listaParamAct
 %type<s> listaCampos
 %type<e> expre expreLogic expreIgual expreRel expreAd expreMul expreUna expreSufi const
-%type<u> opUna opAd
+%type<u> opUna opAd opMul opLogic opRel opIgual opIncre
 %type<p> programa listaDeclaraciones declaracionFunc declaracion declaracionVar
+%type<i> instSelec instruccion instEntSal instExpre instIter
 
 %%
 
@@ -53,7 +55,7 @@ programa
        }
        listaDeclaraciones{
               completaLans($<p>1.varglo, crArgEnt(dvar));
-              completaLans($<p>1.main, crArgEnt($2.main));
+              completaLans($<p>1.main, crArgEtq($2.main));
               descargaContexto(niv);
        }
        ;
@@ -61,7 +63,14 @@ listaDeclaraciones
        : declaracion{
               $$ = $1;
        }
-       | listaDeclaraciones declaracion
+       | listaDeclaraciones declaracion{
+              if($2.main > 0){
+                     $$.main = $2.main;
+              }
+              else{
+                     $$.main = $1.main;
+              }
+       }
        ;
 declaracion
        : declaracionVar
@@ -135,6 +144,7 @@ declaracionFunc
               if(!insTdS($2, FUNCION, $1, niv-1, si, refe)){
                      yyerror("identificador de funcion repetido");
               }
+              $<e>$.v = si;
               emite(PUSHFP, crArgNul(), crArgNul(), crArgNul());
               emite(FPTOP, crArgNul(), crArgNul(), crArgNul());
               $<e>$.d = creaLans(si);
@@ -148,10 +158,11 @@ declaracionFunc
        PTOCOMA_ CLLAVE_ {
               int dvr = TALLA_SEGENLACES + $5.talla + TALLA_TIPO_SIMPLE;
               emite(EASIG, crArgPos(niv, $12.d), crArgNul(), crArgPos(niv, -dvr));
+              completaLans($<e>7.d, crArgEnt(dvar));
               emite(TOPFP, crArgNul(), crArgNul(), crArgNul());
               emite(FPPOP, crArgNul(), crArgNul(), crArgNul());
               if(strcmp($2, "main") == 0){
-                $$.main = si;
+                $$.main = $<e>7.v;
                 emite(FIN, crArgNul(), crArgNul(), crArgNul());
               }
               else{
@@ -215,6 +226,8 @@ instEntSal
               if(sim.t != T_ENTERO){
                      yyerror("argumento de read debe ser entero");
               }
+
+              emite(EREAD, crArgNul(), crArgNul(), crArgPos(sim.n, sim.d));
        }
        | PRINT_ APAR_ expre CPAR_ PTOCOMA_{
               if($3.t != T_ENTERO){
@@ -229,18 +242,33 @@ instSelec
               if($3.t != T_LOGICO && $3.t != T_ERROR){
                      yyerror("la expresion del if debe ser de tipo logico");
               }
+              $<i>$.ifw = creaLans(si);
+              emite(EIGUAL, crArgPos(niv, $3.d), crArgEnt(0), crArgNul());
        } 
-       instruccion ELSE_ instruccion
+       instruccion{
+              $<i>$.fin = creaLans(si);
+              emite(GOTOS, crArgNul(), crArgNul(), crArgNul());
+              completaLans($<i>5.ifw, crArgEnt(si));
+       } 
+       ELSE_ instruccion{
+              completaLans($<i>7.fin, crArgEtq(si));
+       }
        ;
 instIter
-       : WHILE_ APAR_ expre CPAR_ 
+       : WHILE_ {
+              $<i>$.ini = si;
+       }
+       APAR_ expre CPAR_ 
        {
-              if($3.t != T_LOGICO){
+              if($4.t != T_LOGICO){
                      yyerror("argumento de while debe ser logico");
               }
+              $<i>$.ifw = creaLans(si);
+              emite(EIGUAL, crArgEnt(0), crArgPos(niv, $4.d), crArgNul());
        }
        instruccion{
-              
+              emite(GOTOS, crArgNul(), crArgNul(), crArgEtq($<i>2.ini));
+              completaLans($<i>6.ifw, crArgEtq(si));
        }
        ;
 expre
@@ -254,8 +282,8 @@ expre
                      yyerror("error de tipos en asignacion");
               }
               else {
-                $$ = $3;
-                emite(EASIG, crArgEnt(sim.d), crArgNul(), crArgPos(niv, $3.d));
+                     $$ = $3;
+                     emite(EASIG, crArgPos(niv, $3.d), crArgNul(), crArgPos(sim.n, sim.d));
               }
        }
        | ID_ ACOR_ expre CCOR_ IGUAL_ expre{
@@ -269,7 +297,11 @@ expre
               else if(obtTdA(sim.ref).telem != $6.t){
                      yyerror("error de tipos en asignacion de array");
               }
-              else $$.t = $6.t;
+              else {
+                     $$.t = $6.t;
+                     emite(EMULT, crArgPos(niv, $3.d), crArgEnt(TALLA_TIPO_SIMPLE), crArgPos(niv, $3.d));
+                     emite(EVA, crArgPos(sim.n, sim.d), crArgPos(niv, $3.d), crArgPos(niv, $6.d));
+              }
        }
        | ID_ PTO_ ID_ IGUAL_ expre{
               SIMB sim = obtTdS($1);
@@ -283,7 +315,11 @@ expre
                             yyerror("error en asignacion a struct");
                             $$.t = T_ERROR;
                      }
-                     else $$.t = $5.t;
+                     else {
+                            $$.t = $5.t;
+                            int desp = sim.d + cmp.d;
+                            emite(EASIG, crArgPos(niv, $5.d), crArgNul(), crArgPos(sim.n, desp));
+                     }
               }
               
        }
@@ -297,6 +333,17 @@ expreLogic
                      yyerror("error en expresion logica");
                      $$.t = T_ERROR;
               }
+
+              if($2 == 1){
+                     $$.d = creaVarTemp();
+                     emite(EMULT, crArgPos(niv, $1.d), crArgPos(niv, $3.d), crArgPos(niv, $$.d));
+              }
+              if($2 == 2){
+                     $$.d = creaVarTemp();
+                     emite(ESUM, crArgPos(niv, $1.d), crArgPos(niv, $3.d), crArgPos(niv, $$.d));
+                     emite(EMENEQ, crArgPos(niv, $$.d), crArgEnt(1), crArgEtq(si + 2));
+                     emite(EASIG, crArgEnt(1), crArgNul(), crArgPos(niv, $$.d));
+              }
        }
        ;
 expreIgual
@@ -307,6 +354,19 @@ expreIgual
               if($3.t != $1.t && ($1.t != T_ERROR && $3.t != T_ERROR)){
                      yyerror("error en expresion de igualdad");
                      $$.t = T_ERROR;
+              }
+              else{
+                     $$.t = T_LOGICO;
+                     $$.d = creaVarTemp();
+                     emite(EASIG, crArgEnt(1), crArgNul(), crArgPos(niv, $$.d));
+                     if($2 == 1){
+                            emite(EIGUAL, crArgPos(niv, $1.d), crArgPos(niv, $3.d), crArgEtq(si + 2));
+                     }
+                     if($2 == 2){
+                            emite(EDIST, crArgPos(niv, $1.d), crArgPos(niv, $3.d), crArgEtq(si + 2));
+                     }
+                     emite(EASIG, crArgEnt(0), crArgNul(), crArgPos(niv, $$.d));
+
               }
        }
        ;
@@ -319,7 +379,24 @@ expreRel
                      yyerror("error en expresion relacional");
                      $$.t = T_ERROR;
               }
-              else $$.t = T_LOGICO;
+              else {
+                     $$.t = T_LOGICO;
+                     $$.d = creaVarTemp();
+                     emite(EASIG, crArgEnt(1), crArgNul(), crArgPos(niv, $$.d));
+                     if($2 == 1){
+                            emite(EMAY, crArgPos(niv, $1.d), crArgPos(niv, $3.d), crArgEtq(si + 2));
+                     }
+                     if($2 == 2){
+                            emite(EMEN, crArgPos(niv, $1.d), crArgPos(niv, $3.d), crArgEtq(si + 2));
+                     }
+                     if($2 == 3){
+                            emite(EMAYEQ, crArgPos(niv, $1.d), crArgPos(niv, $3.d), crArgEtq(si + 2));
+                     }
+                     if($2 == 4){
+                            emite(EMENEQ, crArgPos(niv, $1.d), crArgPos(niv, $3.d), crArgEtq(si + 2));
+                     }
+                     emite(EASIG, crArgEnt(0), crArgNul(), crArgPos(niv, $$.d));
+              }
        }
        ;
 expreAd
@@ -345,6 +422,9 @@ expreMul
               if(($3.t != T_ENTERO || $1.t != T_ENTERO) && ($1.t != T_ERROR && $3.t != T_ERROR)){
                      yyerror("error en expresion multiplicativa");
               }
+
+              $$.d = creaVarTemp();
+              emite($2, crArgPos(niv, $1.d), crArgPos(niv, $3.d), crArgPos(niv, $$.d));
        }
        ;
 expreUna
@@ -360,13 +440,35 @@ expreUna
                      yyerror("error en expresion unaria");
                      $$.t = T_ERROR;
               }
-              else $$.t = $2.t;
+              else {
+                     $$.t = $2.t;
+                     if($1 == 1){
+                            $$.d = creaVarTemp();
+                            emite(EDIF, crArgEnt(1), crArgPos(niv, $2.d), crArgPos(niv, $$.d));
+                     }
+                     if($1 == 2){
+                            $$.d = creaVarTemp();
+                            emite(EDIF, crArgEnt(0), crArgPos(niv, $2.d), crArgPos(niv, $$.d));
+                     }
+              }
        }
        | opIncre ID_{
               SIMB sim = obtTdS($2);
               if(sim.t != T_ENTERO){
                      yyerror("error en operador prefijo");
               }
+              else{
+                     $$.t = T_ENTERO;
+                     if($1 == 1){
+                            emite(ESUM, crArgPos(sim.n, sim.d), crArgEnt(1), crArgPos(sim.n, sim.d));
+                            $$.d = sim.d;
+                     }
+                     if($1 == 2){
+                            emite(EDIF, crArgPos(sim.n, sim.d), crArgEnt(1), crArgPos(sim.n, sim.d));
+                            $$.d = sim.d;
+                     }
+              }
+
        }
        ;
 expreSufi
@@ -382,7 +484,8 @@ expreSufi
        | ID_{
               SIMB sim = obtTdS($1);
               $$.t = sim.t;
-              $$.d = sim.d;
+              $$.d = creaVarTemp();
+              emite(EASIG, crArgPos(sim.n, sim.d), crArgNul(), crArgPos(niv, $$.d));
        }
        | ID_ opIncre{
               SIMB sim = obtTdS($1);
@@ -391,6 +494,16 @@ expreSufi
               }
               else{
                      $$.t = T_ENTERO;
+                     if($2 == 1){
+                            $$.d = creaVarTemp();
+                            emite(EASIG, crArgPos(sim.n, sim.d), crArgNul(), crArgPos(niv, $$.d));
+                            emite(ESUM, crArgPos(sim.n, sim.d), crArgEnt(1), crArgPos(sim.n, sim.d));
+                     }
+                     if($2 == 2){
+                            $$.d = creaVarTemp();
+                            emite(EASIG, crArgPos(sim.n, sim.d), crArgNul(), crArgPos(niv, $$.d));
+                            emite(EDIF, crArgPos(sim.n, sim.d), crArgEnt(1), crArgPos(sim.n, sim.d));
+                     }
               }
        }
        | ID_ PTO_ ID_{
@@ -405,24 +518,45 @@ expreSufi
                             yyerror("campo no declarado");
                      }
                      $$.t = cmp.t;
+                     int desp = sim.d + cmp.d;
+                     $$.d = creaVarTemp();
+                     emite(EASIG, crArgPos(sim.n, desp), crArgNul(), crArgPos(niv, $$.d));
               }
        }
        | ID_ ACOR_ expre CCOR_{
+              if($3.t != T_ENTERO){
+                     yyerror("indice de array debe ser entero");
+                     $$.t = T_ERROR;
+              }
               SIMB sim = obtTdS($1);
               DIM vect = obtTdA(sim.ref);
               $$.t = vect.telem;
+              emite(EMULT, crArgPos(niv, $3.d), crArgEnt(TALLA_TIPO_SIMPLE), crArgPos(niv, $3.d));
+              $$.d = creaVarTemp();
+              emite(EAV, crArgPos(sim.n, sim.d), crArgPos(niv, $3.d), crArgPos(niv, $$.d));
        }
-       | ID_ APAR_ paramAct CPAR_{
+       | ID_ {
+              emite(INCTOP, crArgNul(), crArgNul(), crArgEnt(TALLA_TIPO_SIMPLE));
+       }
+       APAR_ paramAct CPAR_{
               SIMB sim = obtTdS($1);
               if(sim.c != FUNCION){
                      yyerror("variable debe ser una funcion");
                      $$.t = T_ERROR;
               }
-              else if(cmpDom(sim.ref, $3.refe) != 1){
+              else if(cmpDom(sim.ref, $4.refe) != 1){
                      yyerror("error en el dominio de los parametros actuales");
                      $$.t = T_ERROR;
               }
-              else $$.t = sim.t;
+              else {
+                     $$.t = sim.t;
+                     INF tdd = obtTdD(sim.ref);
+                     //emite(EPUSH, crArgNul(), crArgNul(), crArgEnt(si + 2));
+                     emite(CALL, crArgNul(), crArgNul(), crArgEtq(sim.d));
+                     emite(DECTOP, crArgNul(), crArgNul(), crArgEnt(tdd.tsp));
+                     $$.d = creaVarTemp();
+                     emite(EPOP, crArgNul(), crArgNul(), crArgPos(niv, $$.d));
+              }
        }
        ;
 const
@@ -432,9 +566,15 @@ const
        }
        | TRUE_{
               $$.t = T_LOGICO;
+              $$.d = creaVarTemp();
+              $$.v = 1;
+              emite(EASIG, crArgEnt(1), crArgNul(), crArgPos(niv, $$.d));
        }
        | FALSE_{
               $$.t = T_LOGICO;
+              $$.d = creaVarTemp();
+              $$.v = 0;
+              emite(EASIG, crArgEnt(1), crArgNul(), crArgPos(niv, $$.d));
        }
        ;
 paramAct
@@ -448,24 +588,32 @@ paramAct
 listaParamAct
        : expre{
               $$.refe = insTdD(-1, $1.t);
+              emite(EPUSH, crArgNul(), crArgNul(), crArgPos(niv, $1.d));
        }
-       | expre COMA_ listaParamAct{
-              $$.refe = insTdD($3.refe, $1.t);
+       | expre COMA_ {
+              emite(EPUSH, crArgNul(), crArgNul(), crArgPos(niv, $1.d));
+       } 
+       listaParamAct{
+              $$.refe = insTdD($4.refe, $1.t);
        }
        ;
 opLogic
-       : OPAND_
-       | OPOR_
+       : OPAND_ {
+              $$ = 1;
+       }
+       | OPOR_ {
+              $$ = 2;
+       }
        ;
 opIgual
-       : COMPIG_
-       | COMPDIST_
+       : COMPIG_ {$$ = 1;}
+       | COMPDIST_ {$$ = 2;}
        ;
 opRel
-       : COMPMAY_
-       | COMPMEN_
-       | COMPMAYIG_
-       | COMPMENIG_
+       : COMPMAY_ {$$ = 1;}
+       | COMPMEN_ {$$ = 2;}
+       | COMPMAYIG_ {$$ = 3;}
+       | COMPMENIG_ {$$ = 4;}
        ;
 opAd
        : MAS_ {
@@ -476,22 +624,26 @@ opAd
        }
        ;
 opMul
-       : POR_
-       | DIV_
+       : POR_ {
+              $$ = EMULT;
+       }
+       | DIV_ {
+              $$ = EDIVI;
+       }
        ;
 opUna
        : MAS_{
               $$ = 0;
        }
        | MENOS_{
-              $$ = 0;
+              $$ = 2;
        }
        | OPNOT_{
               $$ = 1;
        }
        ;
 opIncre
-       : OPINCRE_
-       | OPDECRE_
+       : OPINCRE_ {$$ = 1;}
+       | OPDECRE_ {$$ = 2;}
        ;
 
